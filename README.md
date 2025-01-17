@@ -15,9 +15,9 @@ OPENAI_API_KEY="sk_..."
 
 ### 3. Set your assistant ID in assistant-config.ts
 
-´´´
-export let assistantId = "..."
-´´´
+```
+export let assistantId = "your assistant ID"
+```
 
 
 
