@@ -14,14 +14,16 @@ const Home = () => {
     <main className={styles.main}>
       <SpeedInsights />
       <div className={styles.title}>
-        Using my own API keys, please don't exploit this.
+        Visualizacion de datos dentro de un chat - para SmartUp
       </div>
+      <p>hecho por Cristobal</p>
       <div className={styles.container}>
 
           <a className={styles.category} href={`/examples/function-calling`}>
-            Access to Chat
+            Click to access chat
           </a>
       </div>
+      
     </main>
   );
 };
