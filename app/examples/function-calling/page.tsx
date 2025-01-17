@@ -3,36 +3,42 @@
 import React, { useState } from "react";
 import styles from "../shared/page.module.css";
 import Chat from "../../components/chat";
-import WeatherWidget from "../../components/weather-widget";
-import { getWeather } from "../../utils/weather";
+import GraphWidget from "../../components/graph-widget";
+import { createGraph, type ChartType } from "../../utils/graph";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
+import { ChartData } from "chart.js";
 
-interface WeatherData {
-  location?: string;
-  temperature?: number;
-  conditions?: string;
+interface GraphData {
+  type?: ChartType;
+  title?: string;
+  data?: ChartData<ChartType>;
 }
 
 const FunctionCalling = () => {
-  const [weatherData, setWeatherData] = useState<WeatherData>({});
-  const isEmpty = Object.keys(weatherData).length === 0;
+  const [graphData, setGraphData] = useState<GraphData>({});
+  const isEmpty = Object.keys(graphData).length === 0;
 
   const functionCallHandler = async (call: RequiredActionFunctionToolCall) => {
-    if (call?.function?.name !== "get_weather") return;
-    const args = JSON.parse(call.function.arguments);
-    const data = getWeather(args.location);
-    setWeatherData(data);
-    return JSON.stringify(data);
+    if (call?.function?.name !== "create_graph") return;
+    try {
+      const args = JSON.parse(call.function.arguments);
+      const data = createGraph(args);
+      setGraphData(data);
+      return JSON.stringify(data);
+    } catch (error) {
+      console.error('Error creating graph:', error);
+      return JSON.stringify({ error: 'Failed to create graph' });
+    }
   };
 
   return (
     <main className={styles.main}>
       <div className={styles.container}>
         <div className={styles.column}>
-          <WeatherWidget
-            location={weatherData.location || "---"}
-            temperature={weatherData.temperature?.toString() || "---"}
-            conditions={weatherData.conditions || "Sunny"}
+          <GraphWidget
+            data={graphData.data}
+            type={graphData.type}
+            title={graphData.title}
             isEmpty={isEmpty}
           />
         </div>
