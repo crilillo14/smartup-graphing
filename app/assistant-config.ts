@@ -1,4 +1,4 @@
-export let assistantId = "asst_sInhATwhoHilzXBeWBz7GzXH"
+export let assistantId = "asst_o9BHiGgjKhxXec88OAjd0pUV"
 
 
 /*

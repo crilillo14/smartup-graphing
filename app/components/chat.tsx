@@ -153,24 +153,34 @@ const Chat = ({
     scrollToBottom();
   };
 
-  const handleTextCreated = () => {
+  const handleTextCreated = (text: any) => {
+    if (text.content?.[0]?.text?.value?.includes('{"data":') || 
+        text.content?.[0]?.text?.value?.includes('{"id":')) {
+      return;
+    }
     appendMessage("assistant", "");
   };
 
   const handleTextDelta = (delta: any) => {
+    if (delta.value?.includes('{"data":') || 
+        delta.value?.includes('{"id":') ||
+        delta.value?.includes('"datasets":') ||
+        delta.value?.includes('"labels":')) {
+      return;
+    }
     if (delta.value != null) {
       appendToLastMessage(delta.value);
     }
   };
 
   const toolCallCreated = (toolCall: any) => {
-    if (toolCall.type !== "code_interpreter") {
+    if (toolCall.type !== "code_interpreter" && toolCall.function?.name !== "create_graph") {
       appendMessage("code", "");
     }
   };
 
   const toolCallDelta = (delta: any, snapshot: any) => {
-    if (delta.type !== "code_interpreter") {
+    if (delta.type !== "code_interpreter" && snapshot?.function?.name !== "create_graph") {
       if (delta.function?.arguments) {
         appendToLastMessage(delta.function.arguments);
       }
@@ -188,6 +198,13 @@ const Chat = ({
         const parsedResult = JSON.parse(result);
         if (parsedResult.id) {
           appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
+          return { 
+            output: JSON.stringify({ 
+              id: parsedResult.id, 
+              title: parsedResult.title 
+            }), 
+            tool_call_id: toolCall.id 
+          };
         }
         return { output: result, tool_call_id: toolCall.id };
       })
