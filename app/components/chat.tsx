@@ -123,6 +123,8 @@ const Chat = ({
   };
 
   const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
+    const isGraphCreation = toolCallOutputs.some(output => output.output === "");
+    
     const response = await fetch(
       `/api/assistants/threads/${threadId}/actions`,
       {
@@ -133,9 +135,16 @@ const Chat = ({
         body: JSON.stringify({
           runId: runId,
           toolCallOutputs: toolCallOutputs,
+          skipCompletion: isGraphCreation
         }),
       }
     );
+
+    if (isGraphCreation) {
+      setInputDisabled(false);
+      return;
+    }
+
     const stream = AssistantStream.fromReadableStream(response.body);
     handleReadableStream(stream);
   };
@@ -154,18 +163,24 @@ const Chat = ({
   };
 
   const handleTextCreated = (text: any) => {
-    if (text.content?.[0]?.text?.value?.includes('{"data":') || 
-        text.content?.[0]?.text?.value?.includes('{"id":')) {
+    const content = text.content?.[0]?.text?.value || '';
+    if (content.includes('{"data":') || 
+        content.includes('{"id":') ||
+        content.includes('"datasets":') ||
+        content.includes('"labels":') ||
+        content.includes('data:image/')) {
       return;
     }
     appendMessage("assistant", "");
   };
 
   const handleTextDelta = (delta: any) => {
-    if (delta.value?.includes('{"data":') || 
-        delta.value?.includes('{"id":') ||
-        delta.value?.includes('"datasets":') ||
-        delta.value?.includes('"labels":')) {
+    const value = delta.value || '';
+    if (value.includes('{"data":') || 
+        value.includes('{"id":') ||
+        value.includes('"datasets":') ||
+        value.includes('"labels":') ||
+        value.includes('data:image/')) {
       return;
     }
     if (delta.value != null) {
@@ -200,7 +215,7 @@ const Chat = ({
           if (parsedResult.id) {
             appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
             return { 
-              output: "Graph created successfully", 
+              output: "",
               tool_call_id: toolCall.id 
             };
           }
