@@ -2,7 +2,7 @@
 
 import React from "react";
 import styles from "./page.module.css";
-
+import { SpeedInsights } from "@vercel/speed-insights/next"
 const Home = () => {
   const categories = {
 
@@ -12,6 +12,7 @@ const Home = () => {
 
   return (
     <main className={styles.main}>
+      <SpeedInsights />
       <div className={styles.title}>
         Using my own API keys, please don't exploit this.
       </div>

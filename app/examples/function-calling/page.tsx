@@ -47,7 +47,6 @@ const FunctionCalling = () => {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
-        <SpeedInsights />
         <div className={styles.column}>
           <GraphWidget
             data={currentGraph?.data}
