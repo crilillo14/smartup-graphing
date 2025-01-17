@@ -194,18 +194,18 @@ const Chat = ({
     const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
     const toolCallOutputs = await Promise.all(
       toolCalls.map(async (toolCall) => {
-        const result = await functionCallHandler(toolCall);
-        const parsedResult = JSON.parse(result);
-        if (parsedResult.id) {
-          appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
-          return { 
-            output: JSON.stringify({ 
-              id: parsedResult.id, 
-              title: parsedResult.title 
-            }), 
-            tool_call_id: toolCall.id 
-          };
+        if (toolCall.function?.name === "create_graph") {
+          const result = await functionCallHandler(toolCall);
+          const parsedResult = JSON.parse(result);
+          if (parsedResult.id) {
+            appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
+            return { 
+              output: "Graph created successfully", 
+              tool_call_id: toolCall.id 
+            };
+          }
         }
+        const result = await functionCallHandler(toolCall);
         return { output: result, tool_call_id: toolCall.id };
       })
     );
