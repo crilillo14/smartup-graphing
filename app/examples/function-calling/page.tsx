@@ -7,6 +7,7 @@ import GraphWidget from "../../components/graph-widget";
 import { createGraph, type ChartType } from "../../utils/graph";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 import { ChartData } from "chart.js";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 interface GraphData {
   id: string;
@@ -46,6 +47,7 @@ const FunctionCalling = () => {
   return (
     <main className={styles.main}>
       <div className={styles.container}>
+        <SpeedInsights />
         <div className={styles.column}>
           <GraphWidget
             data={currentGraph?.data}
