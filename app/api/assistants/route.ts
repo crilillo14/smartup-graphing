@@ -2,14 +2,14 @@ import { openai } from "@/app/openai";
 
 export const runtime = "nodejs";
 
-// Create a new assistant
+// new assistant with code interpreter and jsut the graphing function 
 export async function POST() {
   const assistant = await openai.beta.assistants.create({
     instructions: "You are a helpful assistant that can create graphs and visualizations when asked. When users ask for graphs, use the create_graph function to generate them.",
     name: "Graph Assistant",
     model: "gpt-4",
     tools: [
-      { type: "code_interpreter" },
+      {type: "code_interpreter"},
       {
         type: "function",
         function: {

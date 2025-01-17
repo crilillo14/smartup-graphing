@@ -5,10 +5,10 @@ import { assistantId } from "./assistant-config";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Assistants API Quickstart",
-  description: "A quickstart template using the Assistants API with OpenAI",
+  title: "SmartUp Graph Assistant",
+  description: "A graph visualization assistant powered by OpenAI",
   icons: {
-    icon: "/openai.svg",
+    icon: "/smartup.png",
   },
 };
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         {assistantId ? children : <Warnings />}
-        <img className="logo" src="/openai.svg" alt="OpenAI Logo" />
+        <img className="logo" src="/smartup.svg" alt="SmartUp Logo" />
       </body>
     </html>
   );

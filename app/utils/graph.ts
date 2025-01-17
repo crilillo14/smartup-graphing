@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
 
-type ChartType = 'line' | 'bar';
+export type ChartType = 'line' | 'bar';
 
 interface Dataset {
   label: string;
@@ -46,4 +46,4 @@ const createGraph = (data: GraphInput): GraphOutput => {
   } as GraphOutput;
 };
 
-export { createGraph, type ChartType }; 
+export { createGraph }; 

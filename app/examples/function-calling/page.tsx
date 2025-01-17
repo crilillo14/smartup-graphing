@@ -9,22 +9,34 @@ import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/ru
 import { ChartData } from "chart.js";
 
 interface GraphData {
+  id: string;
   type?: ChartType;
   title?: string;
   data?: ChartData<ChartType>;
 }
 
 const FunctionCalling = () => {
-  const [graphData, setGraphData] = useState<GraphData>({});
-  const isEmpty = Object.keys(graphData).length === 0;
+  const [graphHistory, setGraphHistory] = useState<GraphData[]>([]);
+  const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
+  
+  const currentGraph = selectedGraphId 
+    ? graphHistory.find(g => g.id === selectedGraphId)
+    : graphHistory[graphHistory.length - 1];
+    
+  const isEmpty = graphHistory.length === 0;
 
   const functionCallHandler = async (call: RequiredActionFunctionToolCall) => {
     if (call?.function?.name !== "create_graph") return;
     try {
       const args = JSON.parse(call.function.arguments);
       const data = createGraph(args);
-      setGraphData(data);
-      return JSON.stringify(data);
+      const newGraph = {
+        ...data,
+        id: Date.now().toString()
+      };
+      setGraphHistory(prev => [...prev, newGraph]);
+      setSelectedGraphId(newGraph.id);
+      return JSON.stringify({ ...data, id: newGraph.id });
     } catch (error) {
       console.error('Error creating graph:', error);
       return JSON.stringify({ error: 'Failed to create graph' });
@@ -36,15 +48,19 @@ const FunctionCalling = () => {
       <div className={styles.container}>
         <div className={styles.column}>
           <GraphWidget
-            data={graphData.data}
-            type={graphData.type}
-            title={graphData.title}
+            data={currentGraph?.data}
+            type={currentGraph?.type}
+            title={currentGraph?.title}
             isEmpty={isEmpty}
           />
         </div>
         <div className={styles.chatContainer}>
           <div className={styles.chat}>
-            <Chat functionCallHandler={functionCallHandler} />
+            <Chat 
+              functionCallHandler={functionCallHandler}
+              onSelectGraph={setSelectedGraphId}
+              selectedGraphId={selectedGraphId}
+            />
           </div>
         </div>
       </div>

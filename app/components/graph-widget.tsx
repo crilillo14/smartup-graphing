@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useRef } from "react";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -43,6 +43,9 @@ const GraphWidget = ({
   title = "Graph",
   isEmpty = false,
 }: GraphWidgetProps) => {
+  const lineChartRef = useRef<ChartJS<"line">>(null);
+  const barChartRef = useRef<ChartJS<"bar">>(null);
+
   const options: ChartOptions<ChartType> = {
     responsive: true,
     maintainAspectRatio: false,
@@ -57,12 +60,30 @@ const GraphWidget = ({
     },
   };
 
+  const handleDownload = () => {
+    const currentChart = type === 'bar' ? barChartRef.current : lineChartRef.current;
+    if (currentChart) {
+      // Get base64 image data
+      const base64Image = currentChart.toBase64Image();
+      
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = base64Image;
+      link.download = `${title.toLowerCase().replace(/\s+/g, '-')}.png`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
   if (isEmpty) {
     return (
       <div className={styles.graphEmptyState}>
         <div className={styles.graphWidgetData}>
-          <p>Ask the assistant to create a graph</p>
-          <p>try: "create a line graph of monthly sales"</p>
+          <h2>Graph Widget</h2>
+          <p>give some data to the assistant</p>
         </div>
       </div>
     );
@@ -78,17 +99,24 @@ const GraphWidget = ({
 
   return (
     <div className={styles.graphWidget}>
-      {type === 'bar' ? (
-        <Bar 
-          options={options as ChartOptions<'bar'>} 
-          data={data as ChartData<'bar'>} 
-        />
-      ) : (
-        <Line 
-          options={options as ChartOptions<'line'>} 
-          data={data as ChartData<'line'>} 
-        />
-      )}
+      <div className={styles.graphContainer}>
+        {type === 'bar' ? (
+          <Bar 
+            ref={barChartRef}
+            options={options as ChartOptions<'bar'>} 
+            data={data as ChartData<'bar'>} 
+          />
+        ) : (
+          <Line 
+            ref={lineChartRef}
+            options={options as ChartOptions<'line'>} 
+            data={data as ChartData<'line'>} 
+          />
+        )}
+      </div>
+      <button onClick={handleDownload} className={styles.downloadButton}>
+        Download Chart
+      </button>
     </div>
   );
 };

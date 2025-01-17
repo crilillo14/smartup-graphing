@@ -1,0 +1,8 @@
+<svg width="28" height="28" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" version="1.0">
+ <g class="layer">
+  <title>Layer 1</title>
+  <g fill="#000000" id="svg_1" transform="translate(0 28) matrix(0.1 0 0 -0.1 0 0)">
+   <path d="m109,270c-70,-20 -99,-60 -99,-136c0,-41 5,-51 39,-85c34,-35 44,-39 87,-39c54,0 99,23 120,62c18,31 17,103 0,137c-26,49 -92,77 -147,61zm80,-74c43,-45 32,-67 -15,-31l-34,26l-32,-26c-22,-18 -34,-23 -41,-16c-13,13 48,81 73,81c9,0 31,-15 49,-34zm-8,-78c39,-31 51,-58 26,-58c-8,0 -22,9 -32,20c-22,25 -33,25 -65,0c-27,-21 -50,-26 -50,-10c0,8 69,79 78,80c2,0 21,-14 43,-32z" fill="#7f00ff" id="svg_2"/>
+  </g>
+ </g>
+</svg>

@@ -5,6 +5,14 @@
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.graphContainer {
+  flex: 1;
+  min-height: 0;
+  position: relative;
 }
 
 .graphEmptyState {
@@ -33,4 +41,25 @@
   margin: 0;
   font-size: 1rem;
   color: #666;
+}
+
+.downloadButton {
+  margin-top: 16px;
+  padding: 8px 16px;
+  background: #7f00ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease;
+  align-self: center;
+}
+
+.downloadButton:hover {
+  background: #6600cc;
+}
+
+.downloadButton:active {
+  background: #5200a3;
 } 

@@ -8,19 +8,35 @@ import Markdown from "react-markdown";
 import { AssistantStreamEvent } from "openai/resources/beta/assistants/assistants";
 import { RequiredActionFunctionToolCall } from "openai/resources/beta/threads/runs/runs";
 
-type MessageProps = {
+interface MessageProps {
   role: "user" | "assistant" | "code";
   text: string;
-};
+  graphId?: string;
+  onSelectGraph?: (id: string) => void;
+  isSelected?: boolean;
+}
 
 const UserMessage = ({ text }: { text: string }) => {
   return <div className={styles.userMessage}>{text}</div>;
 };
 
-const AssistantMessage = ({ text }: { text: string }) => {
+const AssistantMessage = ({ 
+  text, 
+  graphId, 
+  onSelectGraph,
+  isSelected 
+}: Omit<MessageProps, 'role'>) => {
   return (
     <div className={styles.assistantMessage}>
       <Markdown>{text}</Markdown>
+      {graphId && (
+        <button
+          onClick={() => onSelectGraph?.(graphId)}
+          className={`${styles.graphButton} ${isSelected ? styles.selected : ''}`}
+        >
+          Show Graph
+        </button>
+      )}
     </div>
   );
 };
@@ -38,12 +54,12 @@ const CodeMessage = ({ text }: { text: string }) => {
   );
 };
 
-const Message = ({ role, text }: MessageProps) => {
+const Message = ({ role, text, graphId, onSelectGraph, isSelected }: MessageProps) => {
   switch (role) {
     case "user":
       return <UserMessage text={text} />;
     case "assistant":
-      return <AssistantMessage text={text} />;
+      return <AssistantMessage text={text} graphId={graphId} onSelectGraph={onSelectGraph} isSelected={isSelected} />;
     case "code":
       return <CodeMessage text={text} />;
     default:
@@ -51,21 +67,28 @@ const Message = ({ role, text }: MessageProps) => {
   }
 };
 
-type ChatProps = {
-  functionCallHandler?: (
-    toolCall: RequiredActionFunctionToolCall
-  ) => Promise<string>;
-};
+interface ChatProps {
+  functionCallHandler?: (toolCall: RequiredActionFunctionToolCall) => Promise<string>;
+  onSelectGraph?: (id: string) => void;
+  selectedGraphId?: string | null;
+}
+
+interface ChatMessage {
+  role: "user" | "assistant" | "code";
+  text: string;
+  graphId?: string;
+}
 
 const Chat = ({
-  functionCallHandler = () => Promise.resolve(""), // default to return empty string
+  functionCallHandler = () => Promise.resolve(""),
+  onSelectGraph,
+  selectedGraphId
 }: ChatProps) => {
   const [userInput, setUserInput] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputDisabled, setInputDisabled] = useState(false);
   const [threadId, setThreadId] = useState("");
 
-  // automatically scroll to bottom of chat
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,7 +97,6 @@ const Chat = ({
     scrollToBottom();
   }, [messages]);
 
-  // create a new threadID when chat component created
   useEffect(() => {
     const createThread = async () => {
       const res = await fetch(`/api/assistants/threads`, {
@@ -86,7 +108,7 @@ const Chat = ({
     createThread();
   }, []);
 
-  const sendMessage = async (text) => {
+  const sendMessage = async (text: string) => {
     const response = await fetch(
       `/api/assistants/threads/${threadId}/messages`,
       {
@@ -100,7 +122,7 @@ const Chat = ({
     handleReadableStream(stream);
   };
 
-  const submitActionResult = async (runId, toolCallOutputs) => {
+  const submitActionResult = async (runId: string, toolCallOutputs: any[]) => {
     const response = await fetch(
       `/api/assistants/threads/${threadId}/actions`,
       {
@@ -118,7 +140,7 @@ const Chat = ({
     handleReadableStream(stream);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!userInput.trim()) return;
     sendMessage(userInput);
@@ -131,51 +153,43 @@ const Chat = ({
     scrollToBottom();
   };
 
-  /* Stream Event Handlers */
-
-  // textCreated - create new assistant message
   const handleTextCreated = () => {
     appendMessage("assistant", "");
   };
 
-  // textDelta - append text to last assistant message
-  const handleTextDelta = (delta) => {
+  const handleTextDelta = (delta: any) => {
     if (delta.value != null) {
       appendToLastMessage(delta.value);
-    };
-    if (delta.annotations != null) {
-      annotateLastMessage(delta.annotations);
     }
   };
 
-  // imageFileDone - show image in chat
-  const handleImageFileDone = (image) => {
-    appendToLastMessage(`\n![${image.file_id}](/api/files/${image.file_id})\n`);
-  }
-
-  // toolCallCreated - log new tool call
-  const toolCallCreated = (toolCall) => {
-    if (toolCall.type != "code_interpreter") return;
-    appendMessage("code", "");
+  const toolCallCreated = (toolCall: any) => {
+    if (toolCall.type !== "code_interpreter") {
+      appendMessage("code", "");
+    }
   };
 
-  // toolCallDelta - log delta and snapshot for the tool call
-  const toolCallDelta = (delta, snapshot) => {
-    if (delta.type != "code_interpreter") return;
-    if (!delta.code_interpreter.input) return;
-    appendToLastMessage(delta.code_interpreter.input);
+  const toolCallDelta = (delta: any, snapshot: any) => {
+    if (delta.type !== "code_interpreter") {
+      if (delta.function?.arguments) {
+        appendToLastMessage(delta.function.arguments);
+      }
+    }
   };
 
-  // handleRequiresAction - handle function call
   const handleRequiresAction = async (
     event: AssistantStreamEvent.ThreadRunRequiresAction
   ) => {
     const runId = event.data.id;
     const toolCalls = event.data.required_action.submit_tool_outputs.tool_calls;
-    // loop over tool calls and call function handler
     const toolCallOutputs = await Promise.all(
       toolCalls.map(async (toolCall) => {
         const result = await functionCallHandler(toolCall);
+        const parsedResult = JSON.parse(result);
+        if (parsedResult.id) {
+          appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
+        }
+        appendMessage("assistant", JSON.stringify(parsedResult, null, 2));
         return { output: result, tool_call_id: toolCall.id };
       })
     );
@@ -183,24 +197,15 @@ const Chat = ({
     submitActionResult(runId, toolCallOutputs);
   };
 
-  // handleRunCompleted - re-enable the input form
   const handleRunCompleted = () => {
     setInputDisabled(false);
   };
 
   const handleReadableStream = (stream: AssistantStream) => {
-    // messages
     stream.on("textCreated", handleTextCreated);
     stream.on("textDelta", handleTextDelta);
-
-    // image
-    stream.on("imageFileDone", handleImageFileDone);
-
-    // code interpreter
     stream.on("toolCallCreated", toolCallCreated);
     stream.on("toolCallDelta", toolCallDelta);
-
-    // events without helpers yet (e.g. requires_action and run.done)
     stream.on("event", (event) => {
       if (event.event === "thread.run.requires_action")
         handleRequiresAction(event);
@@ -208,13 +213,7 @@ const Chat = ({
     });
   };
 
-  /*
-    =======================
-    === Utility Helpers ===
-    =======================
-  */
-
-  const appendToLastMessage = (text) => {
+  const appendToLastMessage = (text: string) => {
     setMessages((prevMessages) => {
       const lastMessage = prevMessages[prevMessages.length - 1];
       const updatedLastMessage = {
@@ -225,53 +224,33 @@ const Chat = ({
     });
   };
 
-  const appendMessage = (role, text) => {
-    setMessages((prevMessages) => [...prevMessages, { role, text }]);
+  const appendMessage = (role: ChatMessage['role'], text: string, graphId?: string) => {
+    setMessages((prevMessages) => [...prevMessages, { role, text, graphId }]);
   };
-
-  const annotateLastMessage = (annotations) => {
-    setMessages((prevMessages) => {
-      const lastMessage = prevMessages[prevMessages.length - 1];
-      const updatedLastMessage = {
-        ...lastMessage,
-      };
-      annotations.forEach((annotation) => {
-        if (annotation.type === 'file_path') {
-          updatedLastMessage.text = updatedLastMessage.text.replaceAll(
-            annotation.text,
-            `/api/files/${annotation.file_path.file_id}`
-          );
-        }
-      })
-      return [...prevMessages.slice(0, -1), updatedLastMessage];
-    });
-    
-  }
 
   return (
     <div className={styles.chatContainer}>
       <div className={styles.messages}>
         {messages.map((msg, index) => (
-          <Message key={index} role={msg.role} text={msg.text} />
+          <Message 
+            key={index} 
+            {...msg} 
+            onSelectGraph={onSelectGraph}
+            isSelected={msg.graphId === selectedGraphId}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>
-      <form
-        onSubmit={handleSubmit}
-        className={`${styles.inputForm} ${styles.clearfix}`}
-      >
+      <form onSubmit={handleSubmit} className={styles.inputForm}>
         <input
           type="text"
           className={styles.input}
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Enter your question"
-        />
-        <button
-          type="submit"
-          className={styles.button}
           disabled={inputDisabled}
-        >
+        />
+        <button type="submit" className={styles.button} disabled={inputDisabled}>
           Send
         </button>
       </form>
