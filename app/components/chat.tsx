@@ -189,7 +189,6 @@ const Chat = ({
         if (parsedResult.id) {
           appendMessage("assistant", `Graph created: ${parsedResult.title || 'Untitled Graph'}`, parsedResult.id);
         }
-        appendMessage("assistant", JSON.stringify(parsedResult, null, 2));
         return { output: result, tool_call_id: toolCall.id };
       })
     );
